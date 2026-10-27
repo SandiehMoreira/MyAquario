@@ -102,7 +102,7 @@ namespace MyAquario
             {
                 g.Clear(Color.Transparent);
                 r.Render(g, world, RenderScale);
-                Overlay.Draw(g, world, RenderScale, Hover, UpgradeVisible);
+                Overlay.Draw(g, world, RenderScale, UpgradeVisible);
             }
             surface.Present(Handle, Left, Top);
         }

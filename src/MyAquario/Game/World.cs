@@ -376,7 +376,7 @@ namespace MyAquario
 
         public void DropFood(float x)
         {
-            if (State.Hunger <= 3) Toast(State.BettaName + " está de barriga cheia!");
+            if (State.Hunger <= 3) Toast(State.BettaName + " está sem fome agora!");
             if (Pellets.Count >= 18) return;
             x = M.Clamp(x, Water.Left + 6, Water.Right - 6);
             for (int i = 0; i < 3; i++)

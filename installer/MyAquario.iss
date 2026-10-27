@@ -5,7 +5,7 @@
 ; NAO vao no instalador: o programa baixa do GitHub Releases quando a pessoa escolhe.
 
 #define AppName "MyAquario"
-#define AppVersion "0.1.0"
+#define AppVersion "0.1.1"
 #define AppExe "MyAquario.exe"
 
 [Setup]

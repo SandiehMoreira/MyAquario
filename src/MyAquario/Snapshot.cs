@@ -36,11 +36,22 @@ namespace MyAquario
                     {
                         g.Clear(Color.FromArgb(240, 240, 240));
                         r.Render(g, world, scale);
-                        Overlay.Draw(g, world, scale, false, false);
+                        Overlay.Draw(g, world, scale, false);
                     }
                     bmp.Save(Path.Combine(outDir, $"nivel{level}-{TierText.Key(r.Tier)}.png"), ImageFormat.Png);
                     r.Dispose();
                 }
+
+                // Painel de informações (o que aparece fora do aquário ao passar o mouse)
+                world.Toast("Água limpinha! +10 pontos de cuidado");
+                var size = Overlay.InfoSize(world, 2f, true, true);
+                using var info = new Bitmap(size.Width, size.Height, PixelFormat.Format32bppPArgb);
+                using (var g = Graphics.FromImage(info))
+                {
+                    g.Clear(Color.FromArgb(240, 240, 240));
+                    Overlay.DrawInfo(g, world, 2f, true, true);
+                }
+                info.Save(Path.Combine(outDir, $"nivel{level}-info.png"), ImageFormat.Png);
             }
         }
     }

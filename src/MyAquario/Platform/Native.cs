@@ -38,7 +38,8 @@ namespace MyAquario
                          ullTotalVirtual, ullAvailVirtual, ullAvailExtendedVirtual;
         }
 
-        public const int WS_EX_LAYERED = 0x80000, WS_EX_TOOLWINDOW = 0x80;
+        public const int WS_EX_LAYERED = 0x80000, WS_EX_TOOLWINDOW = 0x80, WS_EX_TRANSPARENT = 0x20,
+            WS_EX_NOACTIVATE = 0x08000000, WS_EX_TOPMOST = 0x8;
         public const int ULW_ALPHA = 2;
         public const byte AC_SRC_OVER = 0, AC_SRC_ALPHA = 1;
         public const int WM_WINDOWPOSCHANGING = 0x46, WM_MOUSEACTIVATE = 0x21, MA_NOACTIVATE = 3;

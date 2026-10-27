@@ -24,6 +24,7 @@ namespace MyAquario
         public readonly GameState State;
         readonly World world;
         readonly TankWindow tank;
+        readonly InfoWindow info = new InfoWindow();
         readonly NotifyIcon tray;
         readonly ContextMenuStrip menu;
         readonly Timer frameTimer = new Timer();
@@ -226,7 +227,7 @@ namespace MyAquario
         {
             Settings.ShowTank = !Settings.ShowTank;
             if (Settings.ShowTank) { tank.Show(); tank.ApplyZOrder(); }
-            else tank.Hide();
+            else { tank.Hide(); info.HideInfo(); }
             SaveSettings();
             ApplyPower(true);
         }
@@ -379,6 +380,7 @@ namespace MyAquario
                 frameTimer.Stop();
                 // Deixa um quadro desenhado: a janela "layered" fica invisível até receber o primeiro.
                 if (tank.Visible) Frame();
+                info.HideInfo();
                 current.Release();
                 SaveState();
             }
@@ -413,7 +415,11 @@ namespace MyAquario
             Care.CatchUp(State, DateTime.UtcNow);
             world.Update(dt);
             tank.UpgradeVisible = Care.UpgradeReady(State);
-            try { tank.RenderFrame(current); }
+            try
+            {
+                tank.RenderFrame(current);
+                info.ShowInfo(world, tank.Bounds, tank.RenderScale, tank.Hover);
+            }
             catch (Exception ex)
             {
                 // Se um gráfico falhar (pacote corrompido etc.), volta para o Básico em vez de travar.
@@ -504,6 +510,8 @@ namespace MyAquario
             tray.Visible = false;
             tray.Dispose();
             foreach (var r in renderers.Values) r.Dispose();
+            info.Close();
+            info.Dispose();
             tank.Close();
             tank.Dispose();
             ExitThread();
