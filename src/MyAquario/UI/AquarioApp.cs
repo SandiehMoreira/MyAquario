@@ -77,6 +77,7 @@ namespace MyAquario
                 ContextMenuStrip = menu,
                 DesktopMode = Settings.DesktopMode,
             };
+            info.DesktopMode = Settings.DesktopMode;
             tank.JarClicked += () => world.FeedFromJar();
             tank.TapAt += (x, y) => world.Tap(x, y);
             tank.BadgeClicked += Upgrade;
@@ -306,6 +307,8 @@ namespace MyAquario
         {
             int bottom = tank.Bottom, left = tank.Left;
             tank.DesktopMode = Settings.DesktopMode;
+            info.DesktopMode = Settings.DesktopMode;
+            info.ApplyZOrder();
             UpdateScale();
             var size = tank.PixelSize;
             if (size != tank.Size) tank.Location = new Point(left, bottom - size.Height);
@@ -380,7 +383,7 @@ namespace MyAquario
                 frameTimer.Stop();
                 // Deixa um quadro desenhado: a janela "layered" fica invisível até receber o primeiro.
                 if (tank.Visible) Frame();
-                info.HideInfo();
+                if (!Settings.AlwaysShowInfo) info.HideInfo();
                 current.Release();
                 SaveState();
             }
@@ -419,7 +422,7 @@ namespace MyAquario
             try
             {
                 tank.RenderFrame(current);
-                info.ShowInfo(world, tank.Bounds, tank.RenderScale, tank.Hover);
+                info.ShowInfo(world, tank.Bounds, tank.RenderScale, Settings.AlwaysShowInfo || tank.Hover);
             }
             catch (Exception ex)
             {
@@ -433,6 +436,8 @@ namespace MyAquario
         {
             Care.CatchUp(State, DateTime.UtcNow);
             ApplyPower();
+            if (level == PowerLevel.Paused && Settings.AlwaysShowInfo && tank.Visible)
+                info.ShowInfo(world, tank.Bounds, tank.RenderScale, true);
             Notify();
             tray.Text = Truncate($"MyAquario · {State.BettaName} está {Care.Mood(State)}", 63);
             double now = clock.Elapsed.TotalSeconds;
@@ -481,7 +486,11 @@ namespace MyAquario
         void OnForeground(IntPtr hook, uint evt, IntPtr hwnd, int idObject, int idChild, uint thread, uint time)
         {
             var cls = Native.ClassName(hwnd);
-            if (cls == "WorkerW" || cls == "Progman") tank.PeekAboveDesktop();
+            if (cls == "WorkerW" || cls == "Progman")
+            {
+                tank.PeekAboveDesktop();
+                info.PeekAboveDesktop();
+            }
         }
 
         // ---- Salvar e sair ----

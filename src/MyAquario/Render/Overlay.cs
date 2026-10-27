@@ -14,7 +14,7 @@ namespace MyAquario
     {
         const float InfoWidth = 160; // em unidades de mundo (multiplica pela escala)
 
-        static Font font, bold;
+        static Font font, bold, small, smallBold;
         static float fontScale;
         static Bitmap measureBmp;
         static Graphics measureG;
@@ -26,8 +26,12 @@ namespace MyAquario
             if (font != null && Math.Abs(fontScale - s) < 0.01f) return;
             font?.Dispose();
             bold?.Dispose();
+            small?.Dispose();
+            smallBold?.Dispose();
             font = new Font("Segoe UI", 6.2f * s, FontStyle.Regular, GraphicsUnit.Pixel);
             bold = new Font("Segoe UI", 6.4f * s, FontStyle.Bold, GraphicsUnit.Pixel);
+            small = new Font("Segoe UI", 5.2f * s, FontStyle.Regular, GraphicsUnit.Pixel);
+            smallBold = new Font("Segoe UI", 5.4f * s, FontStyle.Bold, GraphicsUnit.Pixel);
             fontScale = s;
         }
 
@@ -107,7 +111,16 @@ namespace MyAquario
         }
 
         static float LineHeight(Graphics g) => font.GetHeight(g) * 1.15f;
-        static float StatusHeight(Graphics g, float s) => 8 * s + LineHeight(g) * 6;
+        static float RingSize(float s) => 26 * s;
+        static float SmallLine(Graphics g) => small.GetHeight(g) * 1.05f;
+        static float StatusHeight(Graphics g, float s) =>
+            4 * s + LineHeight(g) * 2 + 4 * s + RingSize(s) + 3 * s + SmallLine(g) * 2 + 4 * s;
+
+        static readonly Color Green = Color.FromArgb(120, 210, 90), Yellow = Color.FromArgb(250, 200, 60),
+            Red = Color.FromArgb(240, 80, 70), Blue = Color.FromArgb(80, 180, 240), Pink = Color.FromArgb(250, 140, 180),
+            Gold = Color.FromArgb(255, 200, 60);
+
+        static Color Level(double v, Color good) => v > 60 ? good : v > 30 ? Yellow : Red;
 
         static void DrawStatus(Graphics g, World w, float s, float width, float top)
         {
@@ -130,52 +143,107 @@ namespace MyAquario
             g.DrawString($"{st.BettaName} está {Care.Mood(st)}", bold, white, x, y);
             y += line;
             g.DrawString($"{w.Def.Name} · {w.Def.Liters} L", font, soft, x, y);
-            y += line;
+            y += line + 4 * s;
 
-            float labelW = 34 * s, barW = width - pad * 2 - labelW;
-            // Fome: barra cheia e verde = alimentado; esvaziando e ficando vermelha = hora de comer.
+            // Quatro anéis: a volta completa é 100%.
             double fed = 100 - st.Hunger;
-            var hungerColor = fed > 60 ? Color.FromArgb(120, 210, 90)
-                : fed > 30 ? Color.FromArgb(250, 200, 60) : Color.FromArgb(240, 80, 70);
-            Bar(g, "Fome", fed, hungerColor, x, y, labelW, barW, line, s, soft);
-            y += line;
-            Bar(g, "Água", st.Cleanliness, st.Cleanliness < 25 ? Color.FromArgb(240, 80, 70) : Color.FromArgb(80, 180, 240),
-                x, y, labelW, barW, line, s, soft);
-            y += line;
-            Bar(g, "Humor", st.Happiness, st.Happiness < 25 ? Color.FromArgb(240, 80, 70) : Color.FromArgb(250, 140, 180),
-                x, y, labelW, barW, line, s, soft);
-            y += line;
-
-            if (next != null)
+            double care = next == null ? 100 : Math.Min(100, st.CarePoints / next.PointsNeeded * 100);
+            string careText = next == null ? "máximo!" : $"{Math.Floor(st.CarePoints)}/{next.PointsNeeded}";
+            float slot = (width - pad * 2) / 4, ring = RingSize(s);
+            var items = new (string Name, double Value, Color Color, string Text, Action<Graphics, PointF, float, Color> Icon)[]
             {
-                double pct = Math.Min(100, st.CarePoints / next.PointsNeeded * 100);
-                Bar(g, "Cuidado", pct, Color.FromArgb(255, 200, 60), x, y, labelW, barW, line, s, soft,
-                    $"{Math.Floor(st.CarePoints)}/{next.PointsNeeded}");
+                ("Fome", fed, Level(fed, Green), $"{Math.Round(fed)}%", IconFood),
+                ("Água", st.Cleanliness, Level(st.Cleanliness, Blue), $"{Math.Round(st.Cleanliness)}%", IconDrop),
+                ("Humor", st.Happiness, Level(st.Happiness, Pink), $"{Math.Round(st.Happiness)}%", (gg, c, sz, col) => IconFace(gg, c, sz, st.Happiness)),
+                ("Cuidado", care, Gold, careText, IconStar),
+            };
+
+            var center = new StringFormat { Alignment = StringAlignment.Center };
+            for (int i = 0; i < items.Length; i++)
+            {
+                var it = items[i];
+                float cx = x + slot * i + slot / 2, cy = y + ring / 2;
+                // Vermelho pisca de leve para chamar atenção
+                float pulse = it.Color == Red ? 0.6f + 0.4f * M.Sin(w.Time * 5) : 1;
+                Ring(g, new PointF(cx, cy), ring, 3.2f * s, it.Value, Col.Alpha(it.Color, (int)(255 * pulse)));
+                it.Icon(g, new PointF(cx, cy), ring * 0.42f, it.Color);
+                g.DrawString(it.Name, small, soft, new RectangleF(cx - slot / 2, y + ring + 3 * s, slot, SmallLine(g) + 2), center);
+                g.DrawString(it.Text, smallBold, white, new RectangleF(cx - slot / 2, y + ring + 3 * s + SmallLine(g), slot, SmallLine(g) + 2), center);
             }
-            else g.DrawString($"Cuidado: {Math.Floor(st.CarePoints)} · aquário máximo!", font, soft, x, y);
         }
 
-        static void Bar(Graphics g, string label, double value, Color c, float x, float y, float labelW, float barW,
-            float line, float s, Brush text, string right = null)
+        static void Ring(Graphics g, PointF c, float size, float thick, double value, Color color)
         {
-            g.DrawString(label, font, text, x, y);
-            float rightW = 0;
-            if (right != null)
+            var rect = new RectangleF(c.X - size / 2 + thick / 2, c.Y - size / 2 + thick / 2, size - thick, size - thick);
+            using (var bg = new Pen(Color.FromArgb(55, 255, 255, 255), thick)) g.DrawEllipse(bg, rect);
+            float sweep = (float)(360 * M.Clamp(value, 0, 100) / 100);
+            if (sweep < 1) return;
+            using var p = new Pen(color, thick) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            if (sweep >= 359.5f) g.DrawEllipse(p, rect);
+            else g.DrawArc(p, rect, -90, sweep); // começa no topo, sentido horário
+        }
+
+        // ---- Desenhos do meio dos anéis (size = raio útil) ----
+
+        // Potinho com ração
+        static void IconFood(Graphics g, PointF c, float size, Color color)
+        {
+            float u = size / 6;
+            using (var bowl = new GraphicsPath())
             {
-                rightW = g.MeasureString(right, font).Width + 2 * s;
-                barW -= rightW;
-                g.DrawString(right, font, text, x + labelW + barW + 2 * s, y);
+                bowl.AddArc(c.X - 5 * u, c.Y - 4 * u, 10 * u, 9 * u, 0, 180);
+                bowl.CloseFigure();
+                using var bb = new SolidBrush(Color.FromArgb(235, 240, 245));
+                g.FillPath(bb, bowl);
             }
-            float bh = line * 0.45f, by = y + (line - bh) / 2;
-            var bg = new RectangleF(x + labelW, by, barW, bh);
-            using (var p = Shapes.RoundRect(bg, bh / 2))
-            using (var b = new SolidBrush(Color.FromArgb(70, 255, 255, 255)))
-                g.FillPath(b, p);
-            float fw = (float)(barW * M.Clamp(value, 0, 100) / 100);
-            if (fw > 1)
-                using (var p = Shapes.RoundRect(new RectangleF(bg.X, by, fw, bh), bh / 2))
-                using (var b = new SolidBrush(c))
-                    g.FillPath(b, p);
+            using var food = new SolidBrush(Color.FromArgb(200, 120, 60));
+            g.FillEllipse(food, c.X - 3.6f * u, c.Y - 2.2f * u, 2.4f * u, 2.2f * u);
+            g.FillEllipse(food, c.X - 1.2f * u, c.Y - 3.0f * u, 2.4f * u, 2.2f * u);
+            g.FillEllipse(food, c.X + 1.2f * u, c.Y - 2.2f * u, 2.4f * u, 2.2f * u);
+            g.FillEllipse(food, c.X - 0.2f * u, c.Y - 1.4f * u, 2.2f * u, 2.0f * u);
+        }
+
+        // Gota d'água
+        static void IconDrop(Graphics g, PointF c, float size, Color color)
+        {
+            float u = size / 6;
+            using var p = new GraphicsPath();
+            p.AddBezier(c.X, c.Y - 5.5f * u, c.X + 1.5f * u, c.Y - 3f * u, c.X + 4f * u, c.Y - 0.5f * u, c.X + 4f * u, c.Y + 1.8f * u);
+            p.AddArc(c.X - 4f * u, c.Y - 2.2f * u, 8f * u, 8f * u, 0, 180);
+            p.AddBezier(c.X - 4f * u, c.Y + 1.8f * u, c.X - 4f * u, c.Y - 0.5f * u, c.X - 1.5f * u, c.Y - 3f * u, c.X, c.Y - 5.5f * u);
+            using (var b = new SolidBrush(Color.FromArgb(110, 200, 250))) g.FillPath(b, p);
+            using var shine = new SolidBrush(Color.FromArgb(200, 255, 255, 255));
+            g.FillEllipse(shine, c.X - 2.2f * u, c.Y + 0.2f * u, 1.4f * u, 2.2f * u);
+        }
+
+        // Carinha: sorri, fica séria ou triste conforme o humor
+        static void IconFace(Graphics g, PointF c, float size, double happiness)
+        {
+            float u = size / 6, rr = 5 * u;
+            using (var face = new SolidBrush(Color.FromArgb(255, 215, 70))) g.FillEllipse(face, c.X - rr, c.Y - rr, rr * 2, rr * 2);
+            using var dark = new SolidBrush(Color.FromArgb(70, 45, 20));
+            g.FillEllipse(dark, c.X - 2.4f * u, c.Y - 2.2f * u, 1.4f * u, 1.8f * u);
+            g.FillEllipse(dark, c.X + 1.0f * u, c.Y - 2.2f * u, 1.4f * u, 1.8f * u);
+            using var mouth = new Pen(Color.FromArgb(70, 45, 20), 0.9f * u) { StartCap = LineCap.Round, EndCap = LineCap.Round };
+            float my = c.Y + 1.6f * u;
+            if (happiness >= 60) g.DrawArc(mouth, c.X - 2.6f * u, my - 2.2f * u, 5.2f * u, 3.6f * u, 20, 140);   // sorriso
+            else if (happiness >= 30) g.DrawLine(mouth, c.X - 2f * u, my + 0.6f * u, c.X + 2f * u, my + 0.6f * u); // sério
+            else g.DrawArc(mouth, c.X - 2.6f * u, my, 5.2f * u, 3.6f * u, 200, 140);                             // triste
+        }
+
+        // Estrela
+        static void IconStar(Graphics g, PointF c, float size, Color color)
+        {
+            float outer = size * 0.85f, inner = outer * 0.45f;
+            var pts = new PointF[10];
+            for (int i = 0; i < 10; i++)
+            {
+                double a = -Math.PI / 2 + i * Math.PI / 5;
+                float rad = i % 2 == 0 ? outer : inner;
+                pts[i] = new PointF(c.X + (float)Math.Cos(a) * rad, c.Y + (float)Math.Sin(a) * rad);
+            }
+            using var b = new SolidBrush(Gold);
+            g.FillPolygon(b, pts);
         }
     }
 }

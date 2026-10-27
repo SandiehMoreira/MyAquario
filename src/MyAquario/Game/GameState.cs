@@ -59,6 +59,8 @@ namespace MyAquario
         [DataMember] public bool SaveOnBattery;
         [DataMember] public bool ShowTank;
         [DataMember] public bool PackOfferShown;
+        // true = painel de informações sempre visível; false = só ao passar o mouse
+        [DataMember] public bool AlwaysShowInfo;
 
         public AppSettings() { Defaults(); }
 
@@ -75,6 +77,7 @@ namespace MyAquario
             IdleMinutes = 5;
             SaveOnBattery = true;
             ShowTank = true;
+            AlwaysShowInfo = true;
         }
     }
 

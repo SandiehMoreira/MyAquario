@@ -22,6 +22,7 @@ namespace MyAquario
         readonly CheckBox chkDesktop = new CheckBox { Text = "Fixar na área de trabalho (fica atrás das janelas)", AutoSize = true };
         readonly CheckBox chkStartup = new CheckBox { Text = "Abrir junto com o Windows", AutoSize = true };
         readonly CheckBox chkNotify = new CheckBox { Text = "Avisar quando estiver com fome ou com a água suja", AutoSize = true };
+        readonly CheckBox chkInfo = new CheckBox { Text = "Mostrar as informações sempre (desmarcado: só ao passar o mouse)", AutoSize = true };
 
         static readonly string[] QualityKeys = { "auto", "basico", "normal", "ultra" };
         static readonly double[] Sizes = { 1.0, 1.5, 2.0, 2.5 };
@@ -46,7 +47,7 @@ namespace MyAquario
             AutoScaleDimensions = new SizeF(96, 96);
             AutoScaleMode = AutoScaleMode.Dpi;
             Font = new Font("Segoe UI", 9f);
-            ClientSize = new Size(480, 618);
+            ClientSize = new Size(480, 640);
             try { Icon = Icon.ExtractAssociatedIcon(Application.ExecutablePath); } catch { }
 
             // ---- Gráficos ----
@@ -116,11 +117,12 @@ namespace MyAquario
             chkDesktop.Location = new Point(12, 82);
             chkStartup.Location = new Point(12, 104);
             chkNotify.Location = new Point(12, 126);
-            gTank.Controls.AddRange(new Control[] { chkDesktop, chkStartup, chkNotify });
-            gTank.Height = 156;
+            chkInfo.Location = new Point(12, 148);
+            gTank.Controls.AddRange(new Control[] { chkDesktop, chkStartup, chkNotify, chkInfo });
+            gTank.Height = 178;
             Controls.Add(gTank);
 
-            var btnClose = new Button { Text = "Fechar", Location = new Point(384, 580), Size = new Size(86, 28) };
+            var btnClose = new Button { Text = "Fechar", Location = new Point(384, 602), Size = new Size(86, 28) };
             btnClose.Click += (s, e) => Close();
             Controls.Add(btnClose);
             CancelButton = btnClose;
@@ -144,6 +146,7 @@ namespace MyAquario
             chkDesktop.CheckedChanged += (s, e) => { if (loading) return; app.Settings.DesktopMode = chkDesktop.Checked; app.ApplySettings(); };
             chkStartup.CheckedChanged += (s, e) => { if (loading) return; app.Settings.StartWithWindows = chkStartup.Checked; app.ApplySettings(); };
             chkNotify.CheckedChanged += (s, e) => { if (loading) return; app.Settings.Notifications = chkNotify.Checked; app.SaveSettings(); };
+            chkInfo.CheckedChanged += (s, e) => { if (loading) return; app.Settings.AlwaysShowInfo = chkInfo.Checked; app.ApplySettings(); };
         }
 
         void RebuildFishColors() => app.RecolorBetta();
@@ -174,6 +177,7 @@ namespace MyAquario
             chkDesktop.Checked = app.Settings.DesktopMode;
             chkStartup.Checked = app.Settings.StartWithWindows;
             chkNotify.Checked = app.Settings.Notifications;
+            chkInfo.Checked = app.Settings.AlwaysShowInfo;
             loading = false;
 
             RefreshPacks();

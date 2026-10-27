@@ -26,12 +26,32 @@ namespace MyAquario
             {
                 var cp = base.CreateParams;
                 cp.ExStyle |= Native.WS_EX_LAYERED | Native.WS_EX_TOOLWINDOW | Native.WS_EX_TRANSPARENT
-                    | Native.WS_EX_NOACTIVATE | Native.WS_EX_TOPMOST;
+                    | Native.WS_EX_NOACTIVATE;
                 return cp;
             }
         }
 
         protected override bool ShowWithoutActivation => true;
+
+        /// <summary>Igual ao aquário: no modo área de trabalho fica atrás das janelas; senão, sempre por cima.</summary>
+        public bool DesktopMode = true;
+
+        public void ApplyZOrder()
+        {
+            if (!IsHandleCreated || !Visible) return;
+            const uint f = Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOACTIVATE;
+            if (DesktopMode) Native.SetWindowPos(Handle, Native.HWND_NOTOPMOST, 0, 0, 0, 0, f);
+            Native.SetWindowPos(Handle, DesktopMode ? Native.HWND_BOTTOM : Native.HWND_TOPMOST, 0, 0, 0, 0, f);
+        }
+
+        /// <summary>Depois do Win+D, volta a aparecer por cima do papel de parede.</summary>
+        public void PeekAboveDesktop()
+        {
+            if (!DesktopMode || !Visible) return;
+            const uint f = Native.SWP_NOMOVE | Native.SWP_NOSIZE | Native.SWP_NOACTIVATE;
+            Native.SetWindowPos(Handle, Native.HWND_TOPMOST, 0, 0, 0, 0, f);
+            Native.SetWindowPos(Handle, Native.HWND_NOTOPMOST, 0, 0, 0, 0, f);
+        }
 
         public void ShowInfo(World w, Rectangle tank, float scale, bool status)
         {
@@ -61,7 +81,11 @@ namespace MyAquario
             y = Math.Max(wa.Top, Math.Min(y, wa.Bottom - size.Height));
 
             if (Width != size.Width || Height != size.Height) Size = size;
-            if (!Visible) Show();
+            if (!Visible)
+            {
+                Show();
+                ApplyZOrder();
+            }
             if (Left != x || Top != y) Location = new Point(x, y);
             surface.Present(Handle, x, y);
         }
