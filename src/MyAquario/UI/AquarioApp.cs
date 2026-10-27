@@ -57,7 +57,7 @@ namespace MyAquario
             if (!State.HelpShown)
             {
                 State.HelpShown = true;
-                world.Toast($"Oi! Eu sou o {State.BettaName}. Clique no potinho de ração para me dar comida, e no vidro para me chamar.", 10);
+                world.Toast($"Oi! Eu sou o {State.BettaName} e estou com fome! Clique no potinho de ração ao lado do aquário para me dar comida.", 12);
             }
             else if (awayHours > 3)
                 world.Toast(AwayMessage(awayHours), 6);

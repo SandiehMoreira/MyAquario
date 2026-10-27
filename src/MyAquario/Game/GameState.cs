@@ -32,7 +32,7 @@ namespace MyAquario
 
         void Defaults()
         {
-            Hunger = 25;
+            Hunger = 70; // começa com fome: a primeira coisa que a pessoa aprende é usar o potinho
             Cleanliness = 100;
             Happiness = 70;
             TankLevel = 1;
