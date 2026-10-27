@@ -438,7 +438,9 @@ namespace MyAquario
             {
                 if (State.Hunger > 30) State.CarePoints += 1;
                 State.Hunger = Math.Max(0, State.Hunger - 8);
-                State.Happiness = Math.Min(100, State.Happiness + 0.6);
+                // Comer anima o peixe; em água limpa ele fica ainda mais contente.
+                double joy = State.Cleanliness >= 70 ? 3.5 : 2;
+                State.Happiness = Math.Min(100, State.Happiness + joy);
             }
         }
 
@@ -574,7 +576,11 @@ namespace MyAquario
         {
             bool dirty = State.Cleanliness < 70;
             State.Cleanliness = 100;
-            if (dirty) State.CarePoints += 10;
+            if (dirty)
+            {
+                State.CarePoints += 10;
+                State.Happiness = Math.Min(100, State.Happiness + 15);
+            }
             CleanFx = 1.2f;
             Pellets.RemoveAll(p => p.Ground);
             for (int i = 0; i < 30; i++)

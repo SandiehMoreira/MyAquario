@@ -144,8 +144,10 @@ namespace MyAquario
             s.Hunger = M.Clamp(s.Hunger + HungerPerHour * h, 0, 100);
             s.Cleanliness = M.Clamp(s.Cleanliness - DirtPerHour * h, 0, 100);
             double target = TargetHappiness(s);
-            double rate = 12 * h;
-            s.Happiness = M.Clamp(s.Happiness + M.Clamp(target - s.Happiness, -rate, rate), 0, 100);
+            // Bem cuidado (alimentado e com água limpa) o humor sobe sozinho mais rápido do que cai.
+            bool wellKept = s.Hunger < 40 && s.Cleanliness >= 70;
+            double up = (wellKept ? 30 : 12) * h, down = 12 * h;
+            s.Happiness = M.Clamp(s.Happiness + M.Clamp(target - s.Happiness, -down, up), 0, 100);
             if (s.Happiness >= 50) s.CarePoints += PointsPerHour * h;
         }
 
