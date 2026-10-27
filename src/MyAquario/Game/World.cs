@@ -45,8 +45,17 @@ namespace MyAquario
         public readonly List<PointF> Algae = new List<PointF>();
         public readonly List<PointF> Nest = new List<PointF>();
 
+        // Night: 0 = luz acesa, 1 = apagada (comportamento dos peixes).
+        // Dim: quanto o desenho escurece; a noite é uma penumbra de luar, não um breu.
         public float Time, Night, CleanFx;
+        public float Dim => Night * 0.5f;
         public float? FixedNight; // só para o --snapshot (fotos sempre de dia)
+        // Interruptor: clicar na tampa acende/apaga até a próxima troca automática (7h30 / 21h30).
+        public bool? LightOverride;
+        DateTime overrideUntil;
+        public bool LightOn => Night < 0.5f;
+        // Cada aquário novo vem com uma luminária melhor (mais brilho vindo de cima).
+        public float LampPower => 0.55f + 0.15f * State.TankLevel;
         public bool MouseInside;
         public PointF Mouse;
         public string ToastText;
@@ -63,6 +72,7 @@ namespace MyAquario
         public World(GameState s)
         {
             State = s;
+            Night = ComputeNight(DateTime.Now); // começa já no estado certo, sem transição
             Rebuild();
         }
 
@@ -195,7 +205,11 @@ namespace MyAquario
         public void Update(float dt)
         {
             Time += dt;
-            Night = FixedNight ?? ComputeNight(DateTime.Now);
+            var now = DateTime.Now;
+            if (LightOverride.HasValue && now >= overrideUntil) LightOverride = null;
+            float targetNight = LightOverride.HasValue ? (LightOverride.Value ? 0 : 1) : ComputeNight(now);
+            // Transição suave ao clicar no interruptor
+            Night = FixedNight ?? Night + (targetNight - Night) * Math.Min(1, dt * 3);
             if (ToastTime > 0) ToastTime -= dt;
             if (CleanFx > 0) CleanFx -= dt;
             if (JarShake > 0) JarShake -= dt;
@@ -538,6 +552,16 @@ namespace MyAquario
                 lastTapHappy = Time;
                 State.Happiness = Math.Min(100, State.Happiness + 2);
             }
+        }
+
+        public void ToggleLight()
+        {
+            bool on = !LightOn;
+            LightOverride = on;
+            var now = DateTime.Now;
+            DateTime lightsOn = now.Date.AddHours(7.5), lightsOff = now.Date.AddHours(21.5);
+            overrideUntil = now < lightsOn ? lightsOn : now < lightsOff ? lightsOff : lightsOn.AddDays(1);
+            Toast(on ? "Luz acesa!" : "Luz apagada. Boa noite, peixinhos!", 2.5f);
         }
 
         public void FeedFromJar()

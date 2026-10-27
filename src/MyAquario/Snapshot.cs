@@ -60,6 +60,23 @@ namespace MyAquario
                         r.Dispose();
                     }
                     world.MouseInside = false;
+
+                    // De noite (luz apagada): penumbra de luar
+                    world.FixedNight = 1;
+                    world.Update(0.01f);
+                    foreach (var r in new IRenderer[] { new PixelRenderer(), new CartoonRenderer(Path.Combine(packsDir, "pack-normal")), new UltraRenderer(Path.Combine(packsDir, "pack-ultra")) })
+                    {
+                        using var bmp = new Bitmap((int)Math.Ceiling(world.W * 3), (int)Math.Ceiling(world.H * 3), PixelFormat.Format32bppPArgb);
+                        using (var g = Graphics.FromImage(bmp))
+                        {
+                            g.Clear(Color.FromArgb(40, 44, 52));
+                            r.Render(g, world, 3);
+                        }
+                        bmp.Save(Path.Combine(outDir, $"noite-{TierText.Key(r.Tier)}.png"), ImageFormat.Png);
+                        r.Dispose();
+                    }
+                    world.FixedNight = 0;
+                    world.Update(0.01f);
                 }
 
                 // Painel de informações (o que aparece fora do aquário ao passar o mouse)

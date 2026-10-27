@@ -57,7 +57,7 @@ namespace MyAquario
 
         void DrawScene(World w)
         {
-            float n = w.Night, dirt = WorldLook.Dirt(w);
+            float n = w.Dim, dirt = WorldLook.Dirt(w);
             int gx = L(w.Glass.Left), gy = L(w.Glass.Top), gr = L(w.Glass.Right), gb = L(w.Glass.Bottom);
             int wl = L(w.Water.Left), wr = L(w.Water.Right), surf = L(w.SurfaceY), grav = L(w.GravelTop), wb = L(w.Water.Bottom);
             int tw = L(w.TankW), lh = low.Height;
@@ -71,15 +71,15 @@ namespace MyAquario
             int lidTop = L(5);
             Px(Color.FromArgb(52, 58, 66), 0, lidTop, tw, gy - lidTop);
             Px(Color.FromArgb(84, 92, 102), 0, lidTop, tw, 1);
-            if (n < 1) Px(Color.FromArgb((int)(220 * (1 - n)), 255, 236, 170), gx + 2, gy - 1, gr - gx - 4, 1);
+            if (w.Night < 1) Px(Color.FromArgb((int)(220 * (1 - w.Night)), 255, 236, 170), gx + 2, gy - 1, gr - gx - 4, 1);
 
             // Vidro e ar acima da água
             Px(Color.FromArgb(150, 170, 215, 225), gx, gy, gr - gx, gb - gy);
             Px(Color.FromArgb(90, 210, 235, 245), wl, gy, wr - wl, surf - gy);
 
             // Água em faixas (degradê pixelado)
-            var top = Color.FromArgb(92, 170, 215);
-            var bot = Color.FromArgb(38, 98, 160);
+            var top = Color.FromArgb(110, 190, 230);
+            var bot = Color.FromArgb(55, 125, 185);
             var dirty = Color.FromArgb(95, 120, 70);
             for (int b = 0; b < 4; b++)
             {
@@ -89,6 +89,15 @@ namespace MyAquario
                 Px(Col.Night(c, n), wl, y0, wr - wl, y1 - y0 + 1);
             }
             Px(Col.Night(Col.Lerp(bot, dirty, dirt * 0.55f), n), wl, grav, wr - wl, wb - grav);
+
+            // Luz da luminária: faixa mais clara embaixo da superfície (mais forte nos aquários maiores)
+            if (w.Night < 1)
+            {
+                int glow = (int)(w.LampPower * 40 * (1 - w.Night));
+                int band = (grav - surf) / 3;
+                Px(Color.FromArgb(glow, 255, 250, 225), wl, surf, wr - wl, band / 2);
+                Px(Color.FromArgb(glow / 2, 255, 250, 225), wl, surf + band / 2, wr - wl, band / 2);
+            }
 
             // Brilho na superfície
             int ww = Math.Max(1, wr - wl);

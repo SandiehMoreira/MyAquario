@@ -79,6 +79,7 @@ namespace MyAquario
             };
             info.DesktopMode = Settings.DesktopMode;
             tank.JarClicked += () => world.FeedFromJar();
+            tank.LampClicked += () => world.ToggleLight();
             tank.TapAt += (x, y) => world.Tap(x, y);
             tank.BadgeClicked += Upgrade;
             tank.Moved += () => { Settings.WindowX = tank.Left; Settings.WindowY = tank.Top; Settings.HasPosition = true; SaveSettings(); };
@@ -153,6 +154,9 @@ namespace MyAquario
             var m = new ContextMenuStrip();
             m.Items.Add("Alimentar", null, (s, e) => world.FeedFromJar());
             m.Items.Add("Limpar o aquário", null, (s, e) => world.Clean());
+            var miLight = new ToolStripMenuItem("Acender a luz", null, (s, e) => world.ToggleLight());
+            m.Items.Add(miLight);
+            m.Opening += (s, e) => miLight.Text = world.LightOn ? "Apagar a luz" : "Acender a luz";
             miUpgrade = new ToolStripMenuItem("Mudar para um aquário maior...", null, (s, e) => Upgrade());
             m.Items.Add(miUpgrade);
             m.Items.Add(new ToolStripSeparator());

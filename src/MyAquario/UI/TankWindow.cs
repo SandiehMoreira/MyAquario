@@ -21,7 +21,7 @@ namespace MyAquario
         public bool Hover { get; private set; }
         public bool UpgradeVisible { get; set; }
 
-        public event Action JarClicked;
+        public event Action JarClicked, LampClicked;
         public event Action<float, float> TapAt;
         public event Action BadgeClicked, Moved;
 
@@ -131,7 +131,7 @@ namespace MyAquario
         {
             world.MouseInside = true;
             world.Mouse = new PointF(e.X / RenderScale, e.Y / RenderScale);
-            var cursor = OverJar(world.Mouse.X, world.Mouse.Y) ? Cursors.Hand : Cursors.Default;
+            var cursor = OverJar(world.Mouse.X, world.Mouse.Y) || OverLamp(world.Mouse.X, world.Mouse.Y) ? Cursors.Hand : Cursors.Default;
             if (Cursor != cursor) Cursor = cursor;
             if (down)
             {
@@ -166,10 +166,14 @@ namespace MyAquario
             }
             float x = p.X / RenderScale, y = p.Y / RenderScale;
             if (OverJar(x, y)) JarClicked?.Invoke();
+            else if (OverLamp(x, y)) LampClicked?.Invoke();
             else if (x < world.TankW) TapAt?.Invoke(x, y);
         }
 
         bool OverJar(float x, float y) => RectangleF.Inflate(world.Jar, 3, 3).Contains(x, y);
+        // A tampa (onde fica a luminária) é o interruptor
+        bool OverLamp(float x, float y) => x < world.TankW && y >= 4 && y <= world.Glass.Top + 1
+            && !(UpgradeVisible && Overlay.BadgeRect(world, 1).Contains(x, y));
 
         protected override void OnMouseEnter(EventArgs e)
         {

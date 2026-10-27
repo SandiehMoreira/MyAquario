@@ -64,14 +64,15 @@ namespace MyAquario
             g.PixelOffsetMode = PixelOffsetMode.HighQuality;
             g.ScaleTransform(s, s);
 
-            float n = w.Night, dirt = WorldLook.Dirt(w);
+            float n = w.Dim, dirt = WorldLook.Dirt(w);
             DrawStand(g, w);
-            DrawLid(g, w, n);
+            DrawLid(g, w);
 
             g.SetClip(w.Glass);
             DrawWater(g, w, n, dirt);
             DrawBackdrop(g, w, n);
-            DrawLightRays(g, w, n);
+            DrawLampGlow(g, w);
+            DrawLightRays(g, w);
             foreach (var p in w.Plants) if (!p.Front) DrawPlant(g, w, p, n, true);
             foreach (var d in w.Decor) DrawDecor(g, w, d, n);
             DrawDepthFog(g, w, n, dirt);
@@ -187,8 +188,9 @@ namespace MyAquario
             if (!Realistic) using (var o = new Pen(Color.FromArgb(160, 50, 30, 18), 0.7f)) g.DrawPath(o, path);
         }
 
-        void DrawLid(Graphics g, World w, float n)
+        void DrawLid(Graphics g, World w)
         {
+            float n = w.Night; // a luminária acende/apaga de verdade, sem penumbra
             var r = RectangleF.FromLTRB(1, 5, w.TankW - 1, w.Glass.Top + 1);
             using var path = Shapes.RoundRect(r, 2);
             using var b = new LinearGradientBrush(r, Color.FromArgb(80, 86, 96), Color.FromArgb(40, 44, 52), 90f);
@@ -222,8 +224,8 @@ namespace MyAquario
 
         void DrawWater(Graphics g, World w, float n, float dirt)
         {
-            var top = Color.FromArgb(120, 205, 235);
-            var bot = Realistic ? Color.FromArgb(18, 70, 120) : Color.FromArgb(28, 100, 165);
+            var top = Color.FromArgb(135, 215, 242);
+            var bot = Realistic ? Color.FromArgb(32, 100, 155) : Color.FromArgb(45, 128, 190);
             top = Col.Night(Col.Lerp(top, Color.FromArgb(130, 150, 90), dirt * 0.5f), n);
             bot = Col.Night(Col.Lerp(bot, Color.FromArgb(70, 90, 50), dirt * 0.5f), n);
             var wr = RectangleF.FromLTRB(w.Water.Left, w.SurfaceY - 1, w.Water.Right, w.Water.Bottom + 1);
@@ -659,7 +661,37 @@ namespace MyAquario
 
         /// <summary>Desenha o peixe a partir de uma imagem do pacote. Retorna false para usar o desenho por código.</summary>
         protected virtual bool DrawFishSprite(Graphics g, Fish f, float n, bool sad) => false;
-        protected virtual void DrawLightRays(Graphics g, World w, float n) { }
+        // Luz da luminária: clareia a água de cima para baixo. Cada aquário novo tem uma luminária melhor.
+        void DrawLampGlow(Graphics g, World w)
+        {
+            if (w.Night >= 1) return;
+            int a = (int)(w.LampPower * 48 * (1 - w.Night));
+            var r = RectangleF.FromLTRB(w.Water.Left, w.SurfaceY, w.Water.Right, w.SurfaceY + (w.GravelTop - w.SurfaceY) * 0.75f);
+            using var b = new LinearGradientBrush(RectangleF.Inflate(r, 0, 1), Color.FromArgb(a, 255, 250, 225), Color.FromArgb(0, 255, 250, 225), 90f);
+            g.FillRectangle(b, r);
+        }
+
+        // Raios de luz: sempre no Ultra; no Normal a partir do 3º aquário (luminária melhor).
+        protected virtual float RayStrength(World w) => w.State.TankLevel >= 3 ? 0.35f + 0.2f * (w.State.TankLevel - 3) : 0;
+
+        void DrawLightRays(Graphics g, World w)
+        {
+            float strength = RayStrength(w) * (1 - w.Night);
+            if (strength <= 0.01f) return;
+            int a = (int)(42 * strength);
+            float top = w.SurfaceY, bot = w.GravelTop;
+            using var b = new LinearGradientBrush(new RectangleF(0, top - 1, 1, bot - top + 2),
+                Color.FromArgb(a, 255, 250, 220), Color.FromArgb(0, 255, 250, 220), 90f);
+            for (int i = 0; i < 5; i++)
+            {
+                float x = w.Water.Left + w.Water.Width * (0.08f + 0.2f * i) + M.Sin(w.Time * 0.2f + i * 1.7f) * 6;
+                g.FillPolygon(b, new[]
+                {
+                    new PointF(x - 3, top), new PointF(x + 5, top),
+                    new PointF(x + 20, bot), new PointF(x + 3, bot),
+                });
+            }
+        }
         protected virtual void DrawDepthFog(Graphics g, World w, float n, float dirt) { }
         protected virtual void DrawShadows(Graphics g, World w, float n) { }
         protected virtual void DrawParticles(Graphics g, World w, float n) { }

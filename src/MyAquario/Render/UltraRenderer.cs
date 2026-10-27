@@ -119,28 +119,12 @@ namespace MyAquario
             return true;
         }
 
-        protected override void DrawLightRays(Graphics g, World w, float n)
-        {
-            if (n >= 1) return;
-            int a = (int)(42 * (1 - n));
-            float top = w.SurfaceY, bot = w.GravelTop;
-            using var b = new LinearGradientBrush(new RectangleF(0, top - 1, 1, bot - top + 2),
-                Color.FromArgb(a, 255, 250, 220), Color.FromArgb(0, 255, 250, 220), 90f);
-            for (int i = 0; i < 5; i++)
-            {
-                float x = w.Water.Left + w.Water.Width * (0.08f + 0.2f * i) + M.Sin(w.Time * 0.2f + i * 1.7f) * 6;
-                g.FillPolygon(b, new[]
-                {
-                    new PointF(x - 3, top), new PointF(x + 5, top),
-                    new PointF(x + 20, bot), new PointF(x + 3, bot),
-                });
-            }
-        }
+        protected override float RayStrength(World w) => 0.8f + 0.1f * w.State.TankLevel;
 
         protected override void DrawDepthFog(Graphics g, World w, float n, float dirt)
         {
-            var c = Col.Night(Col.Lerp(Color.FromArgb(40, 110, 160), Color.FromArgb(80, 100, 60), dirt * 0.5f), n);
-            using var b = new SolidBrush(Color.FromArgb(55, c));
+            var c = Col.Night(Col.Lerp(Color.FromArgb(60, 135, 185), Color.FromArgb(80, 100, 60), dirt * 0.5f), n);
+            using var b = new SolidBrush(Color.FromArgb(35, c));
             g.FillRectangle(b, RectangleF.FromLTRB(w.Water.Left, w.SurfaceY, w.Water.Right, w.GravelTop + 2));
         }
 
@@ -172,7 +156,7 @@ namespace MyAquario
 
         protected override void DrawCaustics(Graphics g, World w, float n)
         {
-            if (causticBrushes == null || n >= 0.9f) return;
+            if (causticBrushes == null || w.Night >= 0.9f) return;
             var brush = causticBrushes[(int)(w.Time * 10) % CausticFrames];
             if (brush == null) return;
             // Luz dançando sobre o cascalho

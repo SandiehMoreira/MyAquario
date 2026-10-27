@@ -22,7 +22,8 @@ Começa com um betta num aquário de 10 L e, conforme você cuida, ganha aquári
 - **Humor** depende das duas. Feliz, o betta faz ninho de bolhas na superfície; muito feliz, ele dá pulinhos para fora d'água.
 - **Pontos de cuidado** vêm de tempo feliz, de alimentar quando está com fome e de limpar quando está sujo.
 - Os peixes **não morrem**: ficam pálidos e lentos, e se recuperam quando você cuida.
-- A luz do aquário apaga à noite (22h–7h) e os peixes descansam.
+- A luz do aquário apaga à noite (21h30–7h30) e os peixes descansam. Clique na **tampa** para acender ou apagar na hora.
+- Cada aquário novo vem com uma luminária melhor: mais brilho e, a partir do 3º, raios de luz também no gráfico Normal.
 
 | Nível | Aquário | Pontos | Chegam |
 |---|---|---|---|
