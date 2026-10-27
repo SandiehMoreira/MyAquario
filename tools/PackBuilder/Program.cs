@@ -29,11 +29,14 @@ static class Program
             Save(NormalGravel(), Path.Combine(dir, "gravel.png"));
         });
 
+        string artDir = args.Length >= 3 ? Path.GetFullPath(args[2]) : null;
+
         BuildPack(outDir, "ultra", "Pacote Ultra (realista)", dir =>
         {
             Save(UltraBackdrop(), Path.Combine(dir, "backdrop_hd.png"));
             Save(UltraGravel(), Path.Combine(dir, "gravel_hd.png"));
             for (int i = 0; i < 16; i++) Save(Caustic(i, 16), Path.Combine(dir, $"caustics_{i:00}.png"));
+            CopyArt(artDir == null ? null : Path.Combine(artDir, "ultra"), dir);
         });
 
         if (args.Length >= 2)
@@ -56,6 +59,34 @@ static class Program
         if (File.Exists(zip)) File.Delete(zip);
         ZipFile.CreateFromDirectory(dir, zip, CompressionLevel.Optimal, false);
         Console.WriteLine($"{zip}  ({new FileInfo(zip).Length / 1024} KB)");
+    }
+
+    // Arte feita à mão / por IA (art\ultra\*.png) substitui ou completa o que foi gerado por código.
+    // Peixes (fish_*.png) são reduzidos para no máximo 512 px de largura: pesa menos e gasta menos memória.
+    static void CopyArt(string src, string dir)
+    {
+        if (src == null || !Directory.Exists(src)) return;
+        foreach (var file in Directory.GetFiles(src, "*.png"))
+        {
+            string name = Path.GetFileName(file).ToLowerInvariant();
+            string dest = Path.Combine(dir, name);
+            using var img = Image.FromFile(file);
+            int maxW = name.StartsWith("fish_") ? 512 : 2048;
+            if (img.Width <= maxW) { File.Copy(file, dest, true); }
+            else
+            {
+                int h = (int)Math.Round(img.Height * (maxW / (double)img.Width));
+                using var bmp = new Bitmap(maxW, h, PixelFormat.Format32bppArgb);
+                using (var g = Graphics.FromImage(bmp))
+                {
+                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                    g.DrawImage(img, 0, 0, maxW, h);
+                }
+                bmp.Save(dest, ImageFormat.Png);
+            }
+            Console.WriteLine("  arte: " + name);
+        }
     }
 
     static void Save(Bitmap b, string path)

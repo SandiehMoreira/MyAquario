@@ -51,6 +51,7 @@ namespace MyAquario
             double awayHours = (DateTime.UtcNow.Ticks - State.LastUpdateUtc) / (double)TimeSpan.TicksPerHour;
             Care.CatchUp(State, DateTime.UtcNow);
             world = new World(State);
+            SaveState(); // garante o save do peixe novo mesmo se o app for fechado à força
 
             if (!State.HelpShown)
             {
@@ -84,7 +85,8 @@ namespace MyAquario
             PlaceWindow();
             if (Settings.ShowTank) { tank.Show(); tank.ApplyZOrder(); }
 
-            if (Settings.StartWithWindows != Startup.IsOn()) Startup.Set(Settings.StartWithWindows);
+            // O registro manda (o instalador pode ter ligado a opção "abrir com o Windows").
+            Settings.StartWithWindows = Startup.IsOn();
 
             SystemEvents.SessionSwitch += OnSessionSwitch;
             SystemEvents.PowerModeChanged += OnPowerModeChanged;

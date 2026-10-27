@@ -3,6 +3,9 @@
 Aquário virtual que mora na área de trabalho do Windows: um pet que você alimenta e cuida.
 Começa com um betta num aquário de 10 L e, conforme você cuida, ganha aquários maiores e novos peixes.
 
+**Baixar:** [MyAquario-Setup.exe](https://github.com/SandiehMoreira/MyAquario/releases/latest/download/MyAquario-Setup.exe)
+(Windows 10/11, não precisa de administrador nem instalar nada além dele).
+
 ## Como jogar
 
 | Ação | Como |
@@ -62,8 +65,14 @@ Precisa do .NET SDK 8 (só para compilar). Quem usa o programa não precisa inst
 
 O build gera:
 - `build\MyAquario\MyAquario.exe` (~130 KB)
-- `build\packs\pack-normal.zip` e `pack-ultra.zip`, que vão no GitHub Releases. O programa baixa de
-  `https://github.com/SandiehMoreira/MyAquario/releases/latest/download/pack-<id>.zip`.
+- `build\MyAquario-Setup.exe`: instalador (Inno Setup 6, `installer\MyAquario.iss`)
+- `build\packs\pack-normal.zip` e `pack-ultra.zip`
+
+Os três vão no GitHub Releases. O programa baixa os pacotes de
+`https://github.com/SandiehMoreira/MyAquario/releases/latest/download/pack-<id>.zip`,
+então **toda versão nova precisa levar os dois zips junto**.
+
+Arte realista para o Ultra (imagens dos peixes): veja [ARTE.md](ARTE.md).
 
 Para conferir os gráficos sem abrir a janela:
 

@@ -314,6 +314,12 @@ namespace MyAquario
             g.RotateTransform(tilt * 57.3f);
             g.ScaleTransform(face, 1);
 
+            if (DrawFishSprite(g, f, n, sad))
+            {
+                g.Restore(st);
+                return;
+            }
+
             switch (f.Sp)
             {
                 case Species.Betta:
@@ -574,6 +580,8 @@ namespace MyAquario
 
         // ---- Extras ligados só no Ultra ----
 
+        /// <summary>Desenha o peixe a partir de uma imagem do pacote. Retorna false para usar o desenho por código.</summary>
+        protected virtual bool DrawFishSprite(Graphics g, Fish f, float n, bool sad) => false;
         protected virtual void DrawLightRays(Graphics g, World w, float n) { }
         protected virtual void DrawDepthFog(Graphics g, World w, float n, float dirt) { }
         protected virtual void DrawShadows(Graphics g, World w, float n) { }
