@@ -260,6 +260,10 @@ namespace MyAquario
             if (level == PowerLevel.Paused) tank.RenderFrame(current);
         }
 
+        // Área só do aquário na tela (sem o potinho de ração), para centralizar o painel sobre o vidro.
+        Rectangle TankArea() =>
+            new Rectangle(tank.Left, tank.Top, (int)Math.Round(world.TankW * tank.RenderScale), tank.Height);
+
         public void RecolorBetta()
         {
             foreach (var f in world.Fish)
@@ -422,7 +426,7 @@ namespace MyAquario
             try
             {
                 tank.RenderFrame(current);
-                info.ShowInfo(world, tank.Bounds, tank.RenderScale, Settings.AlwaysShowInfo || tank.Hover);
+                info.ShowInfo(world, TankArea(), tank.RenderScale, Settings.AlwaysShowInfo || tank.Hover);
             }
             catch (Exception ex)
             {
@@ -437,7 +441,7 @@ namespace MyAquario
             Care.CatchUp(State, DateTime.UtcNow);
             ApplyPower();
             if (level == PowerLevel.Paused && Settings.AlwaysShowInfo && tank.Visible)
-                info.ShowInfo(world, tank.Bounds, tank.RenderScale, true);
+                info.ShowInfo(world, TankArea(), tank.RenderScale, true);
             Notify();
             tray.Text = Truncate($"MyAquario · {State.BettaName} está {Care.Mood(State)}", 63);
             double now = clock.Elapsed.TotalSeconds;
