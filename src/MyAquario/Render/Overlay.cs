@@ -133,10 +133,11 @@ namespace MyAquario
             y += line;
 
             float labelW = 34 * s, barW = width - pad * 2 - labelW;
-            // Fome: a barra enche conforme ele fica com fome.
-            var hungerColor = st.Hunger < 40 ? Color.FromArgb(120, 210, 90)
-                : st.Hunger < 70 ? Color.FromArgb(250, 200, 60) : Color.FromArgb(240, 80, 70);
-            Bar(g, "Fome", st.Hunger, hungerColor, x, y, labelW, barW, line, s, soft);
+            // Fome: barra cheia e verde = alimentado; esvaziando e ficando vermelha = hora de comer.
+            double fed = 100 - st.Hunger;
+            var hungerColor = fed > 60 ? Color.FromArgb(120, 210, 90)
+                : fed > 30 ? Color.FromArgb(250, 200, 60) : Color.FromArgb(240, 80, 70);
+            Bar(g, "Fome", fed, hungerColor, x, y, labelW, barW, line, s, soft);
             y += line;
             Bar(g, "Água", st.Cleanliness, st.Cleanliness < 25 ? Color.FromArgb(240, 80, 70) : Color.FromArgb(80, 180, 240),
                 x, y, labelW, barW, line, s, soft);
