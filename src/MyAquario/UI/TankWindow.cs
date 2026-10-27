@@ -21,7 +21,7 @@ namespace MyAquario
         public bool Hover { get; private set; }
         public bool UpgradeVisible { get; set; }
 
-        public event Action<float> FeedAt;
+        public event Action JarClicked;
         public event Action<float, float> TapAt;
         public event Action BadgeClicked, Moved;
 
@@ -131,6 +131,8 @@ namespace MyAquario
         {
             world.MouseInside = true;
             world.Mouse = new PointF(e.X / RenderScale, e.Y / RenderScale);
+            var cursor = OverJar(world.Mouse.X, world.Mouse.Y) ? Cursors.Hand : Cursors.Default;
+            if (Cursor != cursor) Cursor = cursor;
             if (down)
             {
                 var c = Cursor.Position;
@@ -163,9 +165,11 @@ namespace MyAquario
                 return;
             }
             float x = p.X / RenderScale, y = p.Y / RenderScale;
-            if (y < world.SurfaceY + (world.GravelTop - world.SurfaceY) * 0.3f) FeedAt?.Invoke(x);
-            else TapAt?.Invoke(x, y);
+            if (OverJar(x, y)) JarClicked?.Invoke();
+            else if (x < world.TankW) TapAt?.Invoke(x, y);
         }
+
+        bool OverJar(float x, float y) => RectangleF.Inflate(world.Jar, 3, 3).Contains(x, y);
 
         protected override void OnMouseEnter(EventArgs e)
         {

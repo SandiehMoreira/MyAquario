@@ -57,7 +57,7 @@ namespace MyAquario
             if (!State.HelpShown)
             {
                 State.HelpShown = true;
-                world.Toast($"Oi! Eu sou o {State.BettaName}. Clique em cima do aquário para me dar comida.", 9);
+                world.Toast($"Oi! Eu sou o {State.BettaName}. Clique no potinho de ração para me dar comida, e no vidro para me chamar.", 10);
             }
             else if (awayHours > 3)
                 world.Toast(AwayMessage(awayHours), 6);
@@ -77,7 +77,7 @@ namespace MyAquario
                 ContextMenuStrip = menu,
                 DesktopMode = Settings.DesktopMode,
             };
-            tank.FeedAt += x => world.DropFood(x);
+            tank.JarClicked += () => world.FeedFromJar();
             tank.TapAt += (x, y) => world.Tap(x, y);
             tank.BadgeClicked += Upgrade;
             tank.Moved += () => { Settings.WindowX = tank.Left; Settings.WindowY = tank.Top; Settings.HasPosition = true; SaveSettings(); };
@@ -150,7 +150,7 @@ namespace MyAquario
         ContextMenuStrip BuildMenu()
         {
             var m = new ContextMenuStrip();
-            m.Items.Add("Alimentar", null, (s, e) => world.DropFood(world.Water.Left + world.Water.Width * (0.3f + (float)new Random().NextDouble() * 0.4f)));
+            m.Items.Add("Alimentar", null, (s, e) => world.FeedFromJar());
             m.Items.Add("Limpar o aquário", null, (s, e) => world.Clean());
             miUpgrade = new ToolStripMenuItem("Mudar para um aquário maior...", null, (s, e) => Upgrade());
             m.Items.Add(miUpgrade);
@@ -447,7 +447,7 @@ namespace MyAquario
             if (State.Hunger > 75 && now - State.LastHungerNotice > TimeSpan.FromHours(4).Ticks)
             {
                 State.LastHungerNotice = now;
-                tray.ShowBalloonTip(5000, "MyAquario", $"{State.BettaName} está com fome! Clique em cima do aquário para dar comida.", ToolTipIcon.Info);
+                tray.ShowBalloonTip(5000, "MyAquario", $"{State.BettaName} está com fome! Clique no potinho de ração ao lado do aquário.", ToolTipIcon.Info);
             }
             else if (State.Cleanliness < 30 && now - State.LastDirtNotice > TimeSpan.FromHours(8).Ticks)
             {

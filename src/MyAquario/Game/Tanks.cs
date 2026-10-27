@@ -38,10 +38,10 @@ namespace MyAquario
         // W/H em "unidades de mundo"; a janela multiplica pelo tamanho escolhido.
         public static readonly TankDef[] All =
         {
-            new TankDef { Level = 1, Name = "Aquário do Betta",    Liters = 10,  W = 170, H = 125, PointsNeeded = 0,    Adds = Species.Betta,    AddCount = 1 },
-            new TankDef { Level = 2, Name = "Aquário Plantado",    Liters = 30,  W = 220, H = 140, PointsNeeded = 150,  Adds = Species.Corydora, AddCount = 3 },
-            new TankDef { Level = 3, Name = "Aquário Comunitário", Liters = 60,  W = 280, H = 160, PointsNeeded = 500,  Adds = Species.Rasbora,  AddCount = 6 },
-            new TankDef { Level = 4, Name = "Aquário Grande",      Liters = 120, W = 350, H = 185, PointsNeeded = 1200, Adds = Species.Neon,     AddCount = 8 },
+            new TankDef { Level = 1, Name = "Aquário do Betta",    Liters = 10,  W = 170, H = 139, PointsNeeded = 0,    Adds = Species.Betta,    AddCount = 1 },
+            new TankDef { Level = 2, Name = "Aquário Plantado",    Liters = 30,  W = 220, H = 154, PointsNeeded = 150,  Adds = Species.Corydora, AddCount = 3 },
+            new TankDef { Level = 3, Name = "Aquário Comunitário", Liters = 60,  W = 280, H = 174, PointsNeeded = 500,  Adds = Species.Rasbora,  AddCount = 6 },
+            new TankDef { Level = 4, Name = "Aquário Grande",      Liters = 120, W = 350, H = 199, PointsNeeded = 1200, Adds = Species.Neon,     AddCount = 8 },
         };
 
         public static TankDef Get(int level) => All[Math.Max(1, Math.Min(All.Length, level)) - 1];

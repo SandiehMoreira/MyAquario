@@ -60,17 +60,17 @@ namespace MyAquario
             float n = w.Night, dirt = WorldLook.Dirt(w);
             int gx = L(w.Glass.Left), gy = L(w.Glass.Top), gr = L(w.Glass.Right), gb = L(w.Glass.Bottom);
             int wl = L(w.Water.Left), wr = L(w.Water.Right), surf = L(w.SurfaceY), grav = L(w.GravelTop), wb = L(w.Water.Bottom);
-            int lw = low.Width, lh = low.Height;
+            int tw = L(w.TankW), lh = low.Height;
 
             // Móvel de madeira
-            Px(Color.FromArgb(92, 60, 38), 0, gb, lw, lh - gb);
-            Px(Color.FromArgb(130, 90, 55), 0, gb, lw, 1);
-            Px(Color.FromArgb(60, 38, 25), 0, lh - 1, lw, 1);
+            Px(Color.FromArgb(92, 60, 38), 0, gb, tw, lh - gb);
+            Px(Color.FromArgb(130, 90, 55), 0, gb, tw, 1);
+            Px(Color.FromArgb(60, 38, 25), 0, lh - 1, tw, 1);
 
             // Tampa com luminária
             int lidTop = L(5);
-            Px(Color.FromArgb(52, 58, 66), 0, lidTop, lw, gy - lidTop);
-            Px(Color.FromArgb(84, 92, 102), 0, lidTop, lw, 1);
+            Px(Color.FromArgb(52, 58, 66), 0, lidTop, tw, gy - lidTop);
+            Px(Color.FromArgb(84, 92, 102), 0, lidTop, tw, 1);
             if (n < 1) Px(Color.FromArgb((int)(220 * (1 - n)), 255, 236, 170), gx + 2, gy - 1, gr - gx - 4, 1);
 
             // Vidro e ar acima da água
@@ -124,6 +124,9 @@ namespace MyAquario
                 lg.DrawImage(spr, L(f.X) - spr.Width / 2, L(f.Y) - spr.Height / 2, spr.Width, spr.Height);
             }
 
+            var drop = Col.Night(Color.FromArgb(220, 190, 230, 250), n);
+            foreach (var d in w.Drops) Px(drop, L(d.X), L(d.Y));
+
             var bub = Color.FromArgb(200, 210, 240, 250);
             foreach (var b in w.Bubbles)
             {
@@ -168,6 +171,39 @@ namespace MyAquario
             Px(edge, gx, gy, 1, gb - gy);
             Px(edge, gr - 1, gy, 1, gb - gy);
             Px(Color.FromArgb(60, 255, 255, 255), gx + 2, gy + 2, 1, gb - gy - 4);
+
+            DrawJar(w, n);
+        }
+
+        // Potinho de ração ao lado do aquário (clicar = dar comida)
+        void DrawJar(World w, float n)
+        {
+            var j = w.Jar;
+            int shake = w.JarShake > 0 ? (int)Math.Round(M.Sin(w.JarShake * 40) * 1.2f) : 0;
+            int x = L(j.X) + shake, y = L(j.Y), wd = L(j.Width), h = L(j.Height);
+            bool hover = w.MouseInside && RectangleF.Inflate(j, 3, 3).Contains(w.Mouse);
+
+            if (hover) Px(Color.FromArgb(120, 255, 220, 90), x - 1, y - 1, wd + 2, h + 2);
+            // Pote transparente com ração dentro
+            Px(Col.Night(Color.FromArgb(235, 225, 238, 242), n), x, y + 2, wd, h - 2);
+            int food = y + 2 + (h - 2) / 3;
+            for (int yy = food; yy < y + h - 1; yy++)
+                for (int xx = x + 1; xx < x + wd - 1; xx++)
+                    Px(Col.Night(((xx + yy) & 1) == 0 ? Color.FromArgb(160, 90, 45) : Color.FromArgb(125, 68, 35), n), xx, yy);
+            // Etiqueta com um peixinho
+            int ly = y + h / 2 - 1;
+            Px(Col.Night(Color.FromArgb(250, 248, 240), n), x + 1, ly, wd - 2, 3);
+            Px(Col.Night(Color.FromArgb(240, 120, 40), n), x + wd / 2 - 1, ly + 1, 2, 1);
+            Px(Col.Night(Color.FromArgb(240, 120, 40), n), x + wd / 2 - 2, ly, 1, 1);
+            Px(Col.Night(Color.FromArgb(240, 120, 40), n), x + wd / 2 - 2, ly + 2, 1, 1);
+            // Tampa vermelha
+            Px(Col.Night(Color.FromArgb(200, 45, 50), n), x - 1, y, wd + 2, 2);
+            Px(Col.Night(Color.FromArgb(235, 90, 90), n), x - 1, y, wd + 2, 1);
+            // Contorno
+            var edge = Col.Night(Color.FromArgb(150, 120, 140, 150), n);
+            Px(edge, x, y + 2, 1, h - 2);
+            Px(edge, x + wd - 1, y + 2, 1, h - 2);
+            Px(edge, x, y + h - 1, wd, 1);
         }
 
         static readonly Color[][] Greens =

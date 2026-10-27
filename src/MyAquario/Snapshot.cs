@@ -42,6 +42,26 @@ namespace MyAquario
                     r.Dispose();
                 }
 
+                if (level == 1)
+                {
+                    // Betta no meio do pulo, com o mouse em cima do potinho (brilho de "clique aqui")
+                    world.DebugJumpPose(0.45f);
+                    world.MouseInside = true;
+                    world.Mouse = new PointF(world.Jar.X + 5, world.Jar.Y + 10);
+                    foreach (var r in new IRenderer[] { new PixelRenderer(), new CartoonRenderer(Path.Combine(packsDir, "pack-normal")), new UltraRenderer(Path.Combine(packsDir, "pack-ultra")) })
+                    {
+                        using var bmp = new Bitmap((int)Math.Ceiling(world.W * 3), (int)Math.Ceiling(world.H * 3), PixelFormat.Format32bppPArgb);
+                        using (var g = Graphics.FromImage(bmp))
+                        {
+                            g.Clear(Color.FromArgb(240, 240, 240));
+                            r.Render(g, world, 3);
+                        }
+                        bmp.Save(Path.Combine(outDir, $"pulo-{TierText.Key(r.Tier)}.png"), ImageFormat.Png);
+                        r.Dispose();
+                    }
+                    world.MouseInside = false;
+                }
+
                 // Painel de informações (o que aparece fora do aquário ao passar o mouse)
                 world.Toast("Água limpinha! +10 pontos de cuidado");
                 var size = Overlay.InfoSize(world, 2f, true, true);

@@ -10,16 +10,16 @@ Começa com um betta num aquário de 10 L e, conforme você cuida, ganha aquári
 
 | Ação | Como |
 |---|---|
-| Dar comida | Clique na parte de cima da água |
-| Chamar o betta | Clique no vidro (mais embaixo). Mas não bata demais! |
-| Ver o status | Passe o mouse em cima do aquário |
+| Dar comida | Clique no potinho de ração ao lado do aquário |
+| Chamar o betta | Clique no vidro: ele nada até lá (se estiver com fome, não vem). Não bata demais! |
+| Ver o status | Passe o mouse em cima do aquário: as informações aparecem numa janelinha acima dele |
 | Mover | Arraste o aquário |
 | Limpar, gráficos, configurações | Botão direito no aquário ou no ícone perto do relógio |
 | Aquário maior | Clique no selo dourado quando ele aparecer |
 
 - **Fome** sobe com o tempo (cerca de 16 h até ficar faminto), inclusive com o PC desligado.
 - **Água** suja aos poucos (cerca de 3,5 dias). Comida que sobra no fundo suja mais rápido.
-- **Humor** depende das duas. Feliz, o betta faz ninho de bolhas na superfície.
+- **Humor** depende das duas. Feliz, o betta faz ninho de bolhas na superfície; muito feliz, ele dá pulinhos para fora d'água.
 - **Pontos de cuidado** vêm de tempo feliz, de alimentar quando está com fome e de limpar quando está sujo.
 - Os peixes **não morrem**: ficam pálidos e lentos, e se recuperam quando você cuida.
 - A luz do aquário apaga à noite (22h–7h) e os peixes descansam.

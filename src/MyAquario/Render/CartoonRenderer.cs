@@ -91,9 +91,86 @@ namespace MyAquario
                     g.FillRectangle(b, w.Glass);
             DrawCleanFx(g, w);
             DrawSurface(g, w, n);
+            DrawDrops(g, w, n);
             g.ResetClip();
 
             DrawGlass(g, w);
+            DrawJar(g, w, n);
+            g.Restore(st);
+        }
+
+        void DrawDrops(Graphics g, World w, float n)
+        {
+            if (w.Drops.Count == 0) return;
+            using var b = new SolidBrush(Col.Night(Color.FromArgb(210, 200, 235, 255), n));
+            foreach (var d in w.Drops) g.FillEllipse(b, d.X - 0.6f, d.Y - 0.6f, 1.2f, 1.4f);
+        }
+
+        // Potinho de ração ao lado do aquário (clicar = dar comida)
+        void DrawJar(Graphics g, World w, float n)
+        {
+            var j = w.Jar;
+            bool hover = w.MouseInside && RectangleF.Inflate(j, 3, 3).Contains(w.Mouse);
+            var st = g.Save();
+            // Balança quando é clicado, girando pela base
+            float angle = w.JarShake > 0 ? M.Sin(w.JarShake * 30) * 9 * (w.JarShake / 0.45f) : 0;
+            g.TranslateTransform(j.X + j.Width / 2, j.Bottom);
+            g.RotateTransform(angle);
+            g.TranslateTransform(-(j.X + j.Width / 2), -j.Bottom);
+
+            using (var shadow = new SolidBrush(Color.FromArgb(70, 0, 0, 0)))
+                g.FillEllipse(shadow, j.X - 1, j.Bottom - 1.5f, j.Width + 2, 3);
+            if (hover)
+            {
+                // Contorno dourado pulsando: "clique aqui"
+                int a = (int)(150 + 90 * M.Sin(w.Time * 6));
+                using var halo = Shapes.RoundRect(RectangleF.Inflate(j, 2, 2), 3.5f);
+                using var hp = new Pen(Color.FromArgb(a, 255, 205, 60), 1.2f);
+                g.DrawPath(hp, halo);
+            }
+
+            var body = RectangleF.FromLTRB(j.X, j.Y + 4, j.Right, j.Bottom);
+            using var bodyPath = Shapes.RoundRect(body, 2.5f);
+            using (var glass = new LinearGradientBrush(body, Col.Night(Color.FromArgb(235, 240, 248, 252), n),
+                Col.Night(Color.FromArgb(235, 200, 215, 222), n), 0f))
+                g.FillPath(glass, bodyPath);
+
+            // Ração dentro (recortada no formato do pote)
+            var clip = g.Save();
+            g.SetClip(bodyPath, CombineMode.Intersect);
+            var food = RectangleF.FromLTRB(j.X, j.Y + 4 + (body.Height) * 0.3f, j.Right, j.Bottom);
+            using (var fb = new LinearGradientBrush(food, Col.Night(Color.FromArgb(175, 100, 50), n), Col.Night(Color.FromArgb(120, 62, 30), n), 90f))
+                g.FillRectangle(fb, food);
+            using (var dot = new SolidBrush(Col.Night(Color.FromArgb(210, 140, 80), n)))
+                for (int i = 0; i < 14; i++)
+                    g.FillEllipse(dot, j.X + 1.5f + (i * 7 % 15), food.Top + 1 + (i * 5 % 13), 1.6f, 1.3f);
+            // Etiqueta com um peixinho
+            var label = new RectangleF(j.X, j.Y + 4 + body.Height * 0.42f, j.Width, body.Height * 0.32f);
+            using (var lb = new SolidBrush(Col.Night(Color.FromArgb(250, 248, 238), n))) g.FillRectangle(lb, label);
+            float cx = label.X + label.Width / 2, cy = label.Y + label.Height / 2;
+            using (var fishB = new SolidBrush(Col.Night(Color.FromArgb(240, 115, 40), n)))
+            {
+                g.FillEllipse(fishB, cx - 3, cy - 1.6f, 5, 3.2f);
+                g.FillPolygon(fishB, new[] { new PointF(cx - 2.5f, cy), new PointF(cx - 5, cy - 2), new PointF(cx - 5, cy + 2) });
+            }
+            using (var eye = new SolidBrush(Color.FromArgb(30, 30, 30))) g.FillEllipse(eye, cx + 0.8f, cy - 0.7f, 0.9f, 0.9f);
+            g.Restore(clip);
+
+            // Brilho do plástico
+            using (var shine = new SolidBrush(Color.FromArgb((int)(110 * (1 - n * 0.6f)), 255, 255, 255)))
+                g.FillRectangle(shine, j.X + 2, j.Y + 6, 1.5f, body.Height - 5);
+            if (!Realistic) using (var o = new Pen(Color.FromArgb(160, 70, 85, 95), 0.6f)) g.DrawPath(o, bodyPath);
+
+            // Tampa vermelha
+            var lid = new RectangleF(j.X - 1, j.Y, j.Width + 2, 5);
+            using (var lidPath = Shapes.RoundRect(lid, 1.5f))
+            using (var lb = new LinearGradientBrush(lid, Col.Night(Color.FromArgb(240, 85, 85), n), Col.Night(Color.FromArgb(170, 30, 40), n), 90f))
+            {
+                g.FillPath(lb, lidPath);
+                using var ridge = new Pen(Color.FromArgb(70, 0, 0, 0), 0.4f);
+                for (float x = lid.X + 2; x < lid.Right - 1; x += 2) g.DrawLine(ridge, x, lid.Y + 1.5f, x, lid.Bottom - 1);
+                if (!Realistic) using (var o = new Pen(Color.FromArgb(170, 90, 20, 25), 0.6f)) g.DrawPath(o, lidPath);
+            }
             g.Restore(st);
         }
 
@@ -101,7 +178,7 @@ namespace MyAquario
 
         void DrawStand(Graphics g, World w)
         {
-            var r = RectangleF.FromLTRB(1, w.Glass.Bottom - 1, w.W - 1, w.H - 1);
+            var r = RectangleF.FromLTRB(1, w.Glass.Bottom - 1, w.TankW - 1, w.H - 1);
             using var path = Shapes.RoundRect(r, 2);
             using var b = new LinearGradientBrush(r, Color.FromArgb(140, 95, 60), Color.FromArgb(88, 56, 34), 90f);
             g.FillPath(b, path);
@@ -112,13 +189,13 @@ namespace MyAquario
 
         void DrawLid(Graphics g, World w, float n)
         {
-            var r = RectangleF.FromLTRB(1, 5, w.W - 1, w.Glass.Top + 1);
+            var r = RectangleF.FromLTRB(1, 5, w.TankW - 1, w.Glass.Top + 1);
             using var path = Shapes.RoundRect(r, 2);
             using var b = new LinearGradientBrush(r, Color.FromArgb(80, 86, 96), Color.FromArgb(40, 44, 52), 90f);
             g.FillPath(b, path);
             // LED da luminária
             var led = n < 0.5f ? Color.FromArgb(120, 255, 120) : Color.FromArgb(70, 120, 255);
-            using (var lb = new SolidBrush(led)) g.FillEllipse(lb, w.W - 8, 7, 2, 2);
+            using (var lb = new SolidBrush(led)) g.FillEllipse(lb, w.TankW - 8, 7, 2, 2);
             if (n < 1)
             {
                 var lr = new RectangleF(w.Glass.Left + 2, w.Glass.Top - 0.5f, w.Glass.Width - 4, 1.5f);

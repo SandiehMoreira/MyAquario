@@ -19,7 +19,7 @@ namespace MyAquario
         static Bitmap measureBmp;
         static Graphics measureG;
 
-        public static RectangleF BadgeRect(World w, float s) => new RectangleF((w.W - 22) * s, 3 * s, 10 * s, 10 * s);
+        public static RectangleF BadgeRect(World w, float s) => new RectangleF((w.TankW - 22) * s, 3 * s, 10 * s, 10 * s);
 
         static void EnsureFonts(float s)
         {
