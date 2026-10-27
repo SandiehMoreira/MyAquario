@@ -17,7 +17,7 @@ namespace MyAquario
             foreach (int level in new[] { 1, 4 })
             {
                 var state = new GameState { TankLevel = level, BettaColor = 0, Happiness = 90, Hunger = 40, Cleanliness = level == 4 ? 35 : 100, CarePoints = 2000 };
-                var world = new World(state);
+                var world = new World(state) { FixedNight = 0 };
                 for (int i = 0; i < 120; i++) world.Update(1 / 20f); // 6 s de animação
                 world.DropFood(world.Water.Left + world.Water.Width * 0.5f);
                 world.Update(0.5f);
@@ -36,7 +36,7 @@ namespace MyAquario
                     {
                         g.Clear(Color.FromArgb(240, 240, 240));
                         r.Render(g, world, scale);
-                        Overlay.Draw(g, world, scale, level == 4, Care.UpgradeReady(state));
+                        Overlay.Draw(g, world, scale, false, false);
                     }
                     bmp.Save(Path.Combine(outDir, $"nivel{level}-{TierText.Key(r.Tier)}.png"), ImageFormat.Png);
                     r.Dispose();

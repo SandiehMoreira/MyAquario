@@ -15,9 +15,29 @@ static class Program
 
     static int Main(string[] args)
     {
-        if (args.Length < 1)
+        // PackBuilder --limpar <entrada.png> <saida.png>: tira fundo branco/xadrez "pintado" pela IA
+        if (args.Length == 3 && args[0] == "--limpar")
         {
-            Console.WriteLine("Uso: PackBuilder <pasta-saida> [app.ico]");
+            if (Path.GetFullPath(args[1]).Equals(Path.GetFullPath(args[2]), StringComparison.OrdinalIgnoreCase))
+            {
+                Console.WriteLine("Recusado: a saída não pode ser o próprio arquivo de entrada.");
+                return 1;
+            }
+            RemoveFakeBackground(args[1], args[2]);
+            Console.WriteLine("Fundo removido: " + args[2]);
+            return 0;
+        }
+
+        if (args.Length < 1 || args[0].StartsWith("-"))
+        {
+            Console.WriteLine("Uso: PackBuilder <pasta-saida> [app.ico] [pasta-arte]");
+            Console.WriteLine("     PackBuilder --limpar <entrada.png> <saida.png>");
+            return 1;
+        }
+        // Segurança: o 2º argumento é sobrescrito com o ícone, então só aceita um .ico.
+        if (args.Length >= 2 && !args[1].EndsWith(".ico", StringComparison.OrdinalIgnoreCase))
+        {
+            Console.WriteLine("Recusado: o ícone precisa terminar em .ico (" + args[1] + ")");
             return 1;
         }
         string outDir = Path.GetFullPath(args[0]);
@@ -63,30 +83,159 @@ static class Program
 
     // Arte feita à mão / por IA (art\ultra\*.png) substitui ou completa o que foi gerado por código.
     // Peixes (fish_*.png) são reduzidos para no máximo 512 px de largura: pesa menos e gasta menos memória.
-    static void CopyArt(string src, string dir)
+    static void CopyArt(string artDir, string dir)
     {
-        if (src == null || !Directory.Exists(src)) return;
-        foreach (var file in Directory.GetFiles(src, "*.png"))
+        if (artDir == null || !Directory.Exists(artDir)) return;
+        foreach (var file in Directory.GetFiles(artDir, "*.png"))
         {
             string name = Path.GetFileName(file).ToLowerInvariant();
             string dest = Path.Combine(dir, name);
-            using var img = Image.FromFile(file);
-            int maxW = name.StartsWith("fish_") ? 512 : 2048;
-            if (img.Width <= maxW) { File.Copy(file, dest, true); }
-            else
+            using var img = new Bitmap(file);
+            bool fish = name.StartsWith("fish_");
+            // Peixe: recorta a margem transparente, para o tamanho no aquário bater com o corpo.
+            var src = fish ? OpaqueBounds(img) : new Rectangle(0, 0, img.Width, img.Height);
+            int maxW = fish ? 512 : 2048;
+            int w = Math.Min(maxW, src.Width), h = (int)Math.Round(src.Height * (w / (double)src.Width));
+            using var bmp = new Bitmap(w, h, PixelFormat.Format32bppArgb);
+            using (var g = Graphics.FromImage(bmp))
             {
-                int h = (int)Math.Round(img.Height * (maxW / (double)img.Width));
-                using var bmp = new Bitmap(maxW, h, PixelFormat.Format32bppArgb);
-                using (var g = Graphics.FromImage(bmp))
-                {
-                    g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                    g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                    g.DrawImage(img, 0, 0, maxW, h);
-                }
-                bmp.Save(dest, ImageFormat.Png);
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.DrawImage(img, new Rectangle(0, 0, w, h), src, GraphicsUnit.Pixel);
             }
-            Console.WriteLine("  arte: " + name);
+            bmp.Save(dest, ImageFormat.Png);
+            Console.WriteLine($"  arte: {name} ({w}x{h})");
         }
+    }
+
+    static int[] ReadArgb(Bitmap b)
+    {
+        var data = b.LockBits(new Rectangle(0, 0, b.Width, b.Height), ImageLockMode.ReadOnly, PixelFormat.Format32bppArgb);
+        var px = new int[b.Width * b.Height];
+        System.Runtime.InteropServices.Marshal.Copy(data.Scan0, px, 0, px.Length);
+        b.UnlockBits(data);
+        return px;
+    }
+
+    static Rectangle OpaqueBounds(Bitmap b)
+    {
+        var px = ReadArgb(b);
+        int w = b.Width, h = b.Height, x0 = w, x1 = -1, y0 = h, y1 = -1;
+        for (int y = 0; y < h; y++)
+            for (int x = 0; x < w; x++)
+                if ((px[y * w + x] >>> 24) > 20)
+                {
+                    if (x < x0) x0 = x; if (x > x1) x1 = x;
+                    if (y < y0) y0 = y; if (y > y1) y1 = y;
+                }
+        if (x1 < 0) return new Rectangle(0, 0, w, h);
+        const int pad = 4;
+        x0 = Math.Max(0, x0 - pad); y0 = Math.Max(0, y0 - pad);
+        x1 = Math.Min(w - 1, x1 + pad); y1 = Math.Min(h - 1, y1 + pad);
+        return Rectangle.FromLTRB(x0, y0, x1 + 1, y1 + 1);
+    }
+
+    // Fundo claro e sem cor (branco ou o xadrez cinza/branco que a IA desenha) ligado à borda da imagem
+    // vira transparente. Perto do peixe, o quanto o pixel é "branco" vira transparência parcial,
+    // para as nadadeiras finas não ficarem com contorno branco.
+    static void RemoveFakeBackground(string input, string output)
+    {
+        using var src = new Bitmap(input);
+        int w = src.Width, h = src.Height;
+        var px = ReadArgb(src);
+
+        bool IsBg(int c)
+        {
+            int r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255;
+            int mn = Math.Min(r, Math.Min(g, b)), mx = Math.Max(r, Math.Max(g, b));
+            return mn > 218 && mx - mn < 16;
+        }
+
+        var bg = new bool[w * h];
+        var queue = new Queue<int>();
+        void Seed(int i) { if (!bg[i] && IsBg(px[i])) { bg[i] = true; queue.Enqueue(i); } }
+        for (int x = 0; x < w; x++) { Seed(x); Seed((h - 1) * w + x); }
+        for (int y = 0; y < h; y++) { Seed(y * w); Seed(y * w + w - 1); }
+        while (queue.Count > 0)
+        {
+            int i = queue.Dequeue(), x = i % w, y = i / w;
+            if (x > 0) Seed(i - 1);
+            if (x < w - 1) Seed(i + 1);
+            if (y > 0) Seed(i - w);
+            if (y < h - 1) Seed(i + w);
+        }
+
+        // Buracos fechados (xadrez preso entre nadadeiras): só se tiverem os DOIS tons do xadrez,
+        // para não apagar uma parte branca do próprio peixe.
+        var seen = new bool[w * h];
+        var comp = new List<int>();
+        for (int start = 0; start < px.Length; start++)
+        {
+            if (bg[start] || seen[start] || !IsBg(px[start])) continue;
+            comp.Clear();
+            seen[start] = true;
+            queue.Enqueue(start);
+            while (queue.Count > 0)
+            {
+                int i = queue.Dequeue(), x = i % w, y = i / w;
+                comp.Add(i);
+                foreach (int j in new[] { x > 0 ? i - 1 : -1, x < w - 1 ? i + 1 : -1, y > 0 ? i - w : -1, y < h - 1 ? i + w : -1 })
+                    if (j >= 0 && !seen[j] && !bg[j] && IsBg(px[j])) { seen[j] = true; queue.Enqueue(j); }
+            }
+            if (comp.Count < 30) continue;
+            int light = 0, dark = 0;
+            foreach (int i in comp)
+            {
+                int c = px[i], mn = Math.Min((c >> 16) & 255, Math.Min((c >> 8) & 255, c & 255));
+                if (mn >= 250) light++; else if (mn <= 246) dark++;
+            }
+            if (light > comp.Count / 5 && dark > comp.Count / 5)
+                foreach (int i in comp) bg[i] = true;
+        }
+
+        // Distância (em pixels, até 3) de cada pixel do peixe até o fundo
+        var dist = new byte[w * h];
+        for (int i = 0; i < dist.Length; i++) dist[i] = bg[i] ? (byte)0 : (byte)255;
+        for (int pass = 1; pass <= 3; pass++)
+            for (int y = 1; y < h - 1; y++)
+                for (int x = 1; x < w - 1; x++)
+                {
+                    int i = y * w + x;
+                    if (dist[i] != 255) continue;
+                    if (dist[i - 1] == pass - 1 || dist[i + 1] == pass - 1 || dist[i - w] == pass - 1 || dist[i + w] == pass - 1)
+                        dist[i] = (byte)pass;
+                }
+
+        var outPx = new int[w * h];
+        for (int i = 0; i < px.Length; i++)
+        {
+            if (bg[i]) { outPx[i] = 0; continue; }
+            int c = px[i], r = (c >> 16) & 255, g = (c >> 8) & 255, b = c & 255;
+            int a = 255;
+            if (dist[i] <= 3)
+            {
+                int mn = Math.Min(r, Math.Min(g, b)), mx = Math.Max(r, Math.Max(g, b));
+                float white = Math.Max(0, (mn - 150) / 105f) * Math.Max(0, 1 - (mx - mn) / 60f);
+                float keep = 1 - white * (1 - (dist[i] - 1) / 3f);
+                a = (int)(255 * Math.Max(0, Math.Min(1, keep)));
+                if (a > 0 && a < 255)
+                {
+                    // tira o branco misturado na cor (desfaz a mistura com o fundo branco)
+                    float k = a / 255f;
+                    r = Clamp((int)((r - 255 * (1 - k)) / k));
+                    g = Clamp((int)((g - 255 * (1 - k)) / k));
+                    b = Clamp((int)((b - 255 * (1 - k)) / k));
+                }
+            }
+            outPx[i] = (a << 24) | (r << 16) | (g << 8) | b;
+        }
+
+        using var dst = new Bitmap(w, h, PixelFormat.Format32bppArgb);
+        var data = dst.LockBits(new Rectangle(0, 0, w, h), ImageLockMode.WriteOnly, PixelFormat.Format32bppArgb);
+        System.Runtime.InteropServices.Marshal.Copy(outPx, 0, data.Scan0, outPx.Length);
+        dst.UnlockBits(data);
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(output)));
+        dst.Save(output, ImageFormat.Png);
     }
 
     static void Save(Bitmap b, string path)

@@ -36,6 +36,7 @@ namespace MyAquario
         public readonly List<PointF> Nest = new List<PointF>();
 
         public float Time, Night, CleanFx;
+        public float? FixedNight; // só para o --snapshot (fotos sempre de dia)
         public bool MouseInside;
         public PointF Mouse;
         public string ToastText;
@@ -181,7 +182,7 @@ namespace MyAquario
         public void Update(float dt)
         {
             Time += dt;
-            Night = ComputeNight(DateTime.Now);
+            Night = FixedNight ?? ComputeNight(DateTime.Now);
             if (ToastTime > 0) ToastTime -= dt;
             if (CleanFx > 0) CleanFx -= dt;
             if (tapWindow > 0) { tapWindow -= dt; if (tapWindow <= 0) tapCount = 0; }
