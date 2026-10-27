@@ -72,7 +72,7 @@ namespace MyAquario
             DesktopMode = true;
             Notifications = true;
             AutoRest = true;
-            IdleMinutes = 3;
+            IdleMinutes = 5;
             SaveOnBattery = true;
             ShowTank = true;
         }

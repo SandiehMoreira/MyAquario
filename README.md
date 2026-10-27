@@ -48,7 +48,7 @@ Começa com um betta num aquário de 10 L e, conforme você cuida, ganha aquári
 | Situação | O que acontece |
 |---|---|
 | Usando o PC | gráfico escolhido (20 / 30 / 40 quadros por segundo) |
-| PC parado há X minutos (padrão 3) | **repouso**: pixel art a 6 quadros/s, texturas liberadas da memória |
+| PC parado há X minutos (padrão 5) | **repouso**: pixel art a 12 quadros/s, texturas liberadas da memória |
 | Tela bloqueada, jogo/vídeo em tela cheia, aquário escondido | **pausado**: animação parada, praticamente 0% de CPU |
 | Notebook na bateria | Ultra vira Normal e no máximo 20 quadros/s |
 

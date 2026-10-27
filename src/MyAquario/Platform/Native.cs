@@ -97,7 +97,32 @@ namespace MyAquario
             return 0;
         }
 
-        public static bool SomethingFullscreen() { int s = UserState(); return s == 2 || s == 3 || s == 4; }
+        [DllImport("user32.dll")] static extern IntPtr GetForegroundWindow();
+        [DllImport("user32.dll")] static extern bool GetWindowRect(IntPtr hWnd, out RECT rect);
+        [DllImport("user32.dll")] static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint pid);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct RECT { public int Left, Top, Right, Bottom; }
+
+        // Jogo ou vídeo em tela cheia na frente. Não usa o QUNS_BUSY (2) do Windows porque ele também
+        // responde "ocupado" quando a própria ÁREA DE TRABALHO está em foco, e aí o aquário pausava
+        // justamente quando a pessoa clicava perto dele.
+        public static bool SomethingFullscreen()
+        {
+            int s = UserState();
+            if (s == 3 || s == 4) return true; // jogo D3D exclusivo / modo apresentação
+
+            IntPtr fg = GetForegroundWindow();
+            if (fg == IntPtr.Zero) return false;
+            string cls = ClassName(fg);
+            if (cls == "WorkerW" || cls == "Progman" || cls == "Shell_TrayWnd" || cls == "Shell_SecondaryTrayWnd") return false;
+            GetWindowThreadProcessId(fg, out uint pid);
+            if (pid == (uint)System.Diagnostics.Process.GetCurrentProcess().Id) return false;
+            if (!GetWindowRect(fg, out RECT r)) return false;
+            // Janela maximizada não cobre a barra de tarefas; tela cheia de verdade cobre o monitor todo.
+            var screen = System.Windows.Forms.Screen.FromHandle(fg).Bounds;
+            return r.Left <= screen.Left && r.Top <= screen.Top && r.Right >= screen.Right && r.Bottom >= screen.Bottom;
+        }
         public static bool UserAway() => UserState() == 1;
 
         public static string ClassName(IntPtr hwnd)

@@ -199,7 +199,7 @@ namespace MyAquario
             if (IsDisposed) return;
             string mode = app.Level switch
             {
-                PowerLevel.Rest => "em repouso (pixel art, 6 quadros/s)",
+                PowerLevel.Rest => "em repouso (pixel art, 12 quadros/s)",
                 PowerLevel.Paused => "pausado (tela bloqueada ou algo em tela cheia)",
                 _ => "normal",
             };

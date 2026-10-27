@@ -386,7 +386,8 @@ namespace MyAquario
             }
             else
             {
-                int fps = lvl == PowerLevel.Rest ? 6 : current.Fps;
+                // 12 quadros/s no repouso: leve, mas ainda parece vivo (6 parecia travado).
+                int fps = lvl == PowerLevel.Rest ? 12 : current.Fps;
                 if (Settings.SaveOnBattery && HardwareProbe.OnBattery) fps = Math.Min(fps, 20);
                 frameTimer.Interval = Math.Max(10, 1000 / fps);
                 if (!frameTimer.Enabled)
